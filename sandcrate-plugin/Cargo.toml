@@ -1,0 +1,8 @@
+[package]
+name = "sandcrate-plugin"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]

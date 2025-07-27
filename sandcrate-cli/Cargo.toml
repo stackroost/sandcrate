@@ -1,0 +1,6 @@
+[package]
+name = "sandcrate-cli"
+edition = "2021"
+
+[dependencies]
+sandcrate-backend = { path = "../sandcrate-backend" }

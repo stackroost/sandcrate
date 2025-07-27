@@ -1,3 +1,32 @@
-/dist/
+# Rust build artifacts
 /target/
 /Cargo.lock
+
+# WASM build artifacts
+*.wasm
+*.wat
+
+# Byproducts of WASM cross-compilation
+**/target/wasm32-unknown-unknown/
+**/target/wasm32-wasip1/
+
+# Tauri-specific (if used in the future)
+/src-tauri/target/
+/src-tauri/node_modules/
+
+# Logs and OS junk
+*.log
+.DS_Store
+Thumbs.db
+
+# Editor & tool files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git-specific
+*.orig
+
+# Ignore plugin build outputs if copied manually
+assets/plugins/*.wasm
