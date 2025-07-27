@@ -3,8 +3,15 @@ name = "sandcrate-backend"
 edition = "2021"
 
 [dependencies]
-wasmtime = "15"
-wasmtime-wasi = "15"
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+wasmtime = "15"
+wasmtime-wasi = "15"
+pam = "0.7"
+jsonwebtoken = "9"
+chrono = { version = "0.4", features = ["serde"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors"] }
+axum-extra = { version = "0.9", features = ["typed-header"] }

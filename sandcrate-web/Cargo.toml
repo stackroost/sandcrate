@@ -1,7 +1,26 @@
 [package]
 name = "sandcrate-web"
+version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-dioxus = { version = "0.5", features = ["web"] }
-gloo = "0.10"
+leptos = { version = "0.6", features = ["csr"] }
+leptos_router = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["console", "Document", "Element", "HtmlElement", "Node", "Window"] }
+gloo-net = "0.4"
+gloo-storage = "0.3"
+console_log = "1.0"
+log = "0.4"
+
+[lib]
+crate-type = ["cdylib"]  # Required for WASM
+
+[profile.dev]
+opt-level = "z"
+
+[profile.release]
+opt-level = "z"
