@@ -4,7 +4,7 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 use std::sync::Arc;
 use std::fs;
 use std::path::Path as FsPath;
@@ -58,7 +58,7 @@ struct ErrorResponse {
 async fn get_plugins(
     State(_config): State<Arc<AuthConfig>>,
 ) -> Json<ApiResponse<PluginList>> {
-    let plugins_dir = FsPath::new("assets/plugins");
+    let plugins_dir = FsPath::new("../assets/plugins");
     let mut plugins = Vec::new();
     
     if let Ok(entries) = fs::read_dir(plugins_dir) {
@@ -110,9 +110,10 @@ async fn get_plugins(
 }
 
 async fn get_plugin(
+    State(_config): State<Arc<AuthConfig>>,
     Path(plugin_id): Path<String>,
 ) -> Response {
-    let plugins_dir = FsPath::new("assets/plugins");
+    let plugins_dir = FsPath::new("../assets/plugins");
     let plugin_path = plugins_dir.join(format!("{}.wasm", plugin_id));
     
     if !plugin_path.exists() {
@@ -176,13 +177,14 @@ async fn get_plugin(
 }
 
 async fn execute_plugin(
+    State(_config): State<Arc<AuthConfig>>,
     Path(plugin_id): Path<String>,
-    Json(request): Json<PluginExecutionRequest>,
+    Json(request): Json<serde_json::Value>,
 ) -> Response {
     let start_time = std::time::Instant::now();
     
     // Find the plugin file
-    let plugins_dir = FsPath::new("assets/plugins");
+    let plugins_dir = FsPath::new("../assets/plugins");
     let plugin_path = plugins_dir.join(format!("{}.wasm", plugin_id));
     
     if !plugin_path.exists() {
@@ -196,12 +198,16 @@ async fn execute_plugin(
         ).into_response();
     }
     
+    // Extract parameters from the request
+    let parameters = request.get("parameters").cloned();
+    let timeout = request.get("timeout").and_then(|v| v.as_u64());
+    
     // Execute the plugin with parameters and timeout
     let plugin_path_str = plugin_path.to_str().unwrap_or("");
     let execution_result = plugin::run_plugin_with_params(
         plugin_path_str,
-        request.parameters,
-        request.timeout
+        parameters,
+        timeout
     );
     
     let execution_time = start_time.elapsed();
@@ -249,4 +255,5 @@ pub fn routes() -> Router<Arc<AuthConfig>> {
     Router::new()
         .route("/plugins", get(get_plugins))
         .route("/plugins/:id", get(get_plugin))
+        .route("/plugins/:id/execute", post(execute_plugin))
 }
