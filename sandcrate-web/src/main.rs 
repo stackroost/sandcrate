@@ -1,4 +1,0 @@
-fn main() {
-    console_log::init_with_level(log::Level::Debug).expect("log init");
-    leptos::mount_to_body(|| view! { <App /> });
-}
