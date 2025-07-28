@@ -1,6 +1,6 @@
 mod api;
 mod auth;
-mod plugin;
+pub mod plugin;
 
 use std::net::SocketAddr;
 use std::sync::Arc;

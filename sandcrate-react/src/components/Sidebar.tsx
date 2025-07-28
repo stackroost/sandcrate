@@ -53,7 +53,7 @@ export const Sidebar: React.FC = () => {
           <UserCircleIcon className="w-8 h-8 text-gray-400" />
           <div className="ml-3 flex-1">
             <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-            <p className="text-xs text-gray-500">{user?.email}</p>
+            <p className="text-xs text-gray-500">{user?.username}</p>
           </div>
         </div>
         <button
