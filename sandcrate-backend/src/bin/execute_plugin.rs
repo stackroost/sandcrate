@@ -1,46 +1,56 @@
-use std::env;
+use std::fs;
 use std::path::Path;
-use sandcrate_backend::plugin;
+use wasmtime::*;
+use wasmtime_wasi::WasiCtxBuilder;
+use std::env;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
-    
     if args.len() != 2 {
-        println!("Usage: {} <plugin_name>", args[0]);
-        println!("Example: {} sandcrate-plugin", args[0]);
-        return Ok(());
+        eprintln!("Usage: {} <plugin_path>", args[0]);
+        std::process::exit(1);
     }
     
-    let plugin_name = &args[1];
-    let plugin_path = format!("assets/plugins/{}.wasm", plugin_name);
+    let plugin_path = &args[1];
     
-    if !Path::new(&plugin_path).exists() {
-        println!("❌ Plugin '{}' not found at {}", plugin_name, plugin_path);
-        println!("Available plugins:");
-        
-        let plugins = plugin::list_plugins();
-        if plugins.is_empty() {
-            println!("  No plugins found in assets/plugins directory");
-        } else {
-            for plugin in plugins {
-                println!("  - {}", plugin);
-            }
+    // Create a WASM engine
+    let engine = Engine::default();
+    
+    // Create a store with WASI context
+    let wasi = WasiCtxBuilder::new()
+        .inherit_stdio()
+        .inherit_args()?
+        .build();
+    
+    let mut store = Store::new(&engine, wasi);
+    
+    // Read the WASM module
+    let wasm_bytes = fs::read(plugin_path)?;
+    let module = Module::new(&engine, &wasm_bytes)?;
+    
+    // Create a linker and add WASI
+    let mut linker = Linker::new(&engine);
+    wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
+    
+    // Instantiate the module
+    let instance = linker.instantiate(&mut store, &module)?;
+    
+    // Try to find and call a suitable function
+    let function_names = ["_start", "start", "main", "run"];
+    
+    let mut executed = false;
+    
+    for func_name in &function_names {
+        if let Ok(func) = instance.get_typed_func::<(), ()>(&mut store, func_name) {
+            func.call(&mut store, ())?;
+            executed = true;
+            break;
         }
-        return Ok(());
     }
     
-    println!("🚀 Executing plugin: {}", plugin_name);
-    println!("📁 Path: {}", plugin_path);
-    println!("---");
-    
-    match plugin::run_plugin(&plugin_path) {
-        Ok(result) => {
-            println!("✅ Plugin executed successfully!");
-            println!("📋 Result: {}", result);
-        }
-        Err(e) => {
-            println!("❌ Plugin execution failed: {}", e);
-        }
+    if !executed {
+        eprintln!("No suitable entry function found in WASM module");
+        std::process::exit(1);
     }
     
     Ok(())

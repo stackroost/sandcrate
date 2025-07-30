@@ -58,7 +58,7 @@ struct ErrorResponse {
 async fn get_plugins(
     State(_config): State<Arc<AuthConfig>>,
 ) -> Json<ApiResponse<PluginList>> {
-    let plugins_dir = FsPath::new("../assets/plugins");
+    let plugins_dir = FsPath::new("assets/plugins");
     let mut plugins = Vec::new();
     
     if let Ok(entries) = fs::read_dir(plugins_dir) {
@@ -113,7 +113,7 @@ async fn get_plugin(
     State(_config): State<Arc<AuthConfig>>,
     Path(plugin_id): Path<String>,
 ) -> Response {
-    let plugins_dir = FsPath::new("../assets/plugins");
+    let plugins_dir = FsPath::new("assets/plugins");
     let plugin_path = plugins_dir.join(format!("{}.wasm", plugin_id));
     
     if !plugin_path.exists() {
@@ -184,7 +184,7 @@ async fn execute_plugin(
     let start_time = std::time::Instant::now();
     
     // Find the plugin file
-    let plugins_dir = FsPath::new("../assets/plugins");
+    let plugins_dir = FsPath::new("assets/plugins");
     let plugin_path = plugins_dir.join(format!("{}.wasm", plugin_id));
     
     if !plugin_path.exists() {

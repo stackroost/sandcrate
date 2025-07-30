@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { RealtimePluginExecutor } from '../components/RealtimePluginExecutor';
 import { 
   MagnifyingGlassIcon,
   PuzzlePieceIcon,
   PlayIcon,
   XMarkIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  BoltIcon
 } from '@heroicons/react/24/outline';
 
 interface Plugin {
@@ -77,7 +79,6 @@ const ExecutionModal: React.FC<ExecutionModalProps> = ({ plugin, isOpen, onClose
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Execute Plugin</h2>
@@ -91,9 +92,7 @@ const ExecutionModal: React.FC<ExecutionModalProps> = ({ plugin, isOpen, onClose
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 space-y-4">
-          {/* Parameters Input */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Parameters (JSON)
@@ -110,7 +109,6 @@ const ExecutionModal: React.FC<ExecutionModalProps> = ({ plugin, isOpen, onClose
             </p>
           </div>
 
-          {/* Execute Button */}
           <div className="flex justify-end">
             <button
               onClick={handleExecute}
@@ -131,7 +129,6 @@ const ExecutionModal: React.FC<ExecutionModalProps> = ({ plugin, isOpen, onClose
             </button>
           </div>
 
-          {/* Results */}
           {result && (
             <div className="border rounded-md p-4">
               <div className="flex items-center mb-3">
@@ -188,6 +185,7 @@ export const Plugins: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
   const [isExecutionModalOpen, setIsExecutionModalOpen] = useState(false);
+  const [isRealtimeModalOpen, setIsRealtimeModalOpen] = useState(false);
   const [executionHistory, setExecutionHistory] = useState<Map<string, ExecutionResult[]>>(new Map());
 
   useEffect(() => {
@@ -278,6 +276,11 @@ export const Plugins: React.FC = () => {
   const handleExecutePlugin = (plugin: Plugin) => {
     setSelectedPlugin(plugin);
     setIsExecutionModalOpen(true);
+  };
+
+  const handleRealtimeExecutePlugin = (plugin: Plugin) => {
+    setSelectedPlugin(plugin);
+    setIsRealtimeModalOpen(true);
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -398,6 +401,14 @@ export const Plugins: React.FC = () => {
                     Execute
                   </button>
                   <button
+                    onClick={() => handleRealtimeExecutePlugin(plugin)}
+                    className="flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                    title="Real-time Execution"
+                  >
+                    <BoltIcon className="w-4 h-4 mr-1" />
+                    Real-time
+                  </button>
+                  <button
                     onClick={() => {/* TODO: View plugin details */}}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                     title="View Details"
@@ -430,6 +441,13 @@ export const Plugins: React.FC = () => {
         isOpen={isExecutionModalOpen}
         onClose={() => setIsExecutionModalOpen(false)}
         onExecute={executePlugin}
+      />
+
+      {/* Real-time Execution Modal */}
+      <RealtimePluginExecutor
+        plugin={selectedPlugin}
+        isOpen={isRealtimeModalOpen}
+        onClose={() => setIsRealtimeModalOpen(false)}
       />
     </div>
   );

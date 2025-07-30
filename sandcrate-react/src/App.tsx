@@ -9,7 +9,6 @@ import { Dashboard } from './pages/Dashboard';
 import { Plugins } from './pages/Plugins';
 import './index.css';
 
-// Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -24,7 +23,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-// Main Layout Component
 const MainLayout: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50">
@@ -40,7 +38,6 @@ const MainLayout: React.FC = () => {
   );
 };
 
-// Main App Component
 function App() {
   return (
     <ErrorBoundary>
