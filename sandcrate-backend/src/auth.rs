@@ -61,14 +61,11 @@ impl AuthConfig {
     }
 }
 
-// Check if user has sudo/root privileges
 fn check_user_privileges(username: &str) -> (bool, String) {
-    // Check if user is root
     if username == "root" {
         return (true, "root".to_string());
     }
     
-    // Check if user has sudo privileges
     let output = std::process::Command::new("sudo")
         .args(["-l", "-U", username])
         .output();

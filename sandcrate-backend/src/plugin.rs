@@ -1,9 +1,14 @@
 use std::fs;
 use std::path::Path;
-use std::time::Duration;
 use wasmtime::*;
 use wasmtime_wasi::WasiCtxBuilder;
 use serde_json::Value;
+use tokio::sync::broadcast;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use std::io::{Read, Write};
+
+
 
 pub fn list_plugins() -> Vec<String> {
     let plugins_dir = Path::new("assets/plugins");
@@ -36,10 +41,8 @@ pub fn run_plugin_with_params(
     parameters: Option<Value>,
     _timeout: Option<u64>
 ) -> Result<String, Box<dyn std::error::Error>> {
-    // Create a WASM engine
     let engine = Engine::default();
     
-    // Create a store with WASI context
     let wasi = WasiCtxBuilder::new()
         .inherit_stdio()
         .inherit_args()?
@@ -47,19 +50,14 @@ pub fn run_plugin_with_params(
     
     let mut store = Store::new(&engine, wasi);
     
-    // Read the WASM module
     let wasm_bytes = fs::read(plugin_path)?;
     let module = Module::new(&engine, &wasm_bytes)?;
     
-    // Create a linker and add WASI
     let mut linker = Linker::new(&engine);
     wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
     
-    // Instantiate the module
     let instance = linker.instantiate(&mut store, &module)?;
     
-    // Try to find and call a suitable function
-    // Common function names for WASM modules: _start, start, main, run
     let function_names = ["_start", "start", "main", "run"];
     
     let mut executed = false;
@@ -81,6 +79,84 @@ pub fn run_plugin_with_params(
     Ok(result)
 }
 
+pub async fn run_plugin_with_realtime_output(
+    plugin_path: &str,
+    _parameters: Option<Value>,
+    _timeout: Option<u64>,
+    ws_tx: broadcast::Sender<crate::websocket::PluginExecutionSession>,
+    session_id: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let session_id = session_id.to_string();
+    let plugin_id = Path::new(plugin_path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("unknown")
+        .to_string();
+    
+    let _ = ws_tx.send(crate::websocket::PluginExecutionSession {
+        id: session_id.clone(),
+        plugin_id: plugin_id.clone(),
+        status: "starting".to_string(),
+        output: "Plugin execution started".to_string(),
+    });
+    
+    let output = tokio::process::Command::new("cargo")
+        .args(&["run", "--bin", "execute_plugin", "--quiet"])
+        .arg(plugin_path)
+        .output()
+        .await?;
+    
+    let _ = ws_tx.send(crate::websocket::PluginExecutionSession {
+        id: session_id.clone(),
+        plugin_id: plugin_id.clone(),
+        status: "running".to_string(),
+        output: "Executing plugin...".to_string(),
+    });
+    
+    if !output.stdout.is_empty() {
+        let stdout_str = String::from_utf8_lossy(&output.stdout);
+        for line in stdout_str.lines() {
+            if !line.trim().is_empty() {
+                let _ = ws_tx.send(crate::websocket::PluginExecutionSession {
+                    id: session_id.clone(),
+                    plugin_id: plugin_id.clone(),
+                    status: "running".to_string(),
+                    output: line.trim().to_string(),
+                });
+            }
+        }
+    }
+    
+    if !output.stderr.is_empty() {
+        let stderr_str = String::from_utf8_lossy(&output.stderr);
+        for line in stderr_str.lines() {
+            if !line.trim().is_empty() {
+                let _ = ws_tx.send(crate::websocket::PluginExecutionSession {
+                    id: session_id.clone(),
+                    plugin_id: plugin_id.clone(),
+                    status: "running".to_string(),
+                    output: format!("ERROR: {}", line.trim()),
+                });
+            }
+        }
+    }
+    
+    let result = if output.status.success() {
+        "Plugin executed successfully".to_string()
+    } else {
+        format!("Plugin execution failed with exit code: {}", output.status)
+    };
+    
+    let _ = ws_tx.send(crate::websocket::PluginExecutionSession {
+        id: session_id.clone(),
+        plugin_id: plugin_id.clone(),
+        status: "completed".to_string(),
+        output: format!("Plugin completed: {}", result),
+    });
+    
+    Ok(result)
+}
+
 pub fn get_plugin_info(plugin_path: &str) -> Result<PluginInfo, Box<dyn std::error::Error>> {
     let path = Path::new(plugin_path);
     
@@ -91,12 +167,10 @@ pub fn get_plugin_info(plugin_path: &str) -> Result<PluginInfo, Box<dyn std::err
     let metadata = fs::metadata(path)?;
     let file_size = metadata.len();
     
-    // Try to read WASM module info
     let wasm_bytes = fs::read(path)?;
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm_bytes)?;
     
-    // Get exported functions from module
     let exports: Vec<String> = module
         .exports()
         .map(|export| export.name().to_string())
