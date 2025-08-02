@@ -13,10 +13,8 @@ export const Auth: React.FC = () => {
 
   const { login, user, loading } = useAuth();
 
-  // Debug logging
   console.log('Auth component - loading:', loading, 'user:', user);
 
-  // Show loading spinner while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white">
@@ -25,7 +23,6 @@ export const Auth: React.FC = () => {
     );
   }
 
-  // If user is already logged in, redirect to dashboard
   if (user) {
     console.log('User is logged in, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
@@ -48,13 +45,11 @@ export const Auth: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {/* Logo */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-green-600 mb-2">SandCrate</h1>
           <p className="text-gray-600">Secure Plugin Management Platform</p>
         </div>
 
-        {/* Auth Form */}
         <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-100">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-semibold text-gray-900">
@@ -134,7 +129,6 @@ export const Auth: React.FC = () => {
           </form>
         </div>
 
-        {/* Footer */}
         <div className="text-center text-sm text-gray-500">
           <p>Secure authentication powered by PAM Linux</p>
         </div>

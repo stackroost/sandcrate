@@ -63,7 +63,10 @@ export const RealtimePluginExecutor: React.FC<RealtimeExecutionProps> = ({
 
   const connectWebSocket = () => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `ws://127.0.0.1:3000/ws/plugins`;
+    const token = localStorage.getItem('authToken');
+    const wsUrl = token 
+      ? `ws://127.0.0.1:3000/ws/plugins?token=${encodeURIComponent(token)}`
+      : `ws://127.0.0.1:3000/ws/plugins`;
     
     console.log('Attempting to connect to WebSocket:', wsUrl);
     
@@ -152,13 +155,11 @@ export const RealtimePluginExecutor: React.FC<RealtimeExecutionProps> = ({
   const executePlugin = () => {
     if (!plugin || !isConnected || !wsRef.current) return;
 
-    // Clear previous output
     setOutput([]);
     setError(null);
     setIsExecuting(true);
     setExecutionStatus('starting');
 
-    // Parse parameters
     let parsedParams = {};
     if (parameters.trim()) {
       try {
@@ -170,12 +171,11 @@ export const RealtimePluginExecutor: React.FC<RealtimeExecutionProps> = ({
       }
     }
 
-    // Send execution command
     const command = {
       command: 'execute_plugin',
       plugin_id: plugin.id,
       parameters: parsedParams,
-      timeout: 30000 // 30 seconds timeout
+      timeout: 30000
     };
 
     wsRef.current.send(JSON.stringify(command));
@@ -196,7 +196,6 @@ export const RealtimePluginExecutor: React.FC<RealtimeExecutionProps> = ({
     setExecutionStatus('idle');
   };
 
-  // Connect to WebSocket when modal opens
   useEffect(() => {
     if (isOpen && !isConnected) {
       console.log('Modal opened, attempting WebSocket connection...');

@@ -1,14 +1,20 @@
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State},
+    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State, Query},
     response::IntoResponse,
 };
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use uuid::Uuid;
+use serde::Deserialize;
 
 use crate::auth::AuthConfig;
 use crate::plugin;
+
+#[derive(Debug, Deserialize)]
+pub struct WebSocketQuery {
+    token: Option<String>,
+}
 
 #[derive(Debug, Clone)]
 pub struct PluginExecutionSession {
@@ -36,8 +42,26 @@ impl WebSocketManager {
 pub async fn plugin_execution_websocket(
     ws: WebSocketUpgrade,
     State((state, ws_manager)): State<(Arc<AuthConfig>, Arc<WebSocketManager>)>,
+    Query(query): Query<WebSocketQuery>,
 ) -> impl IntoResponse {
+    if let Some(token) = query.token {
+        if !is_valid_token(&token, &state).await {
+            return axum::http::Response::builder()
+                .status(401)
+                .body("Unauthorized".into())
+                .unwrap();
+        }
+    }
+    
     ws.on_upgrade(|socket| handle_plugin_execution_socket(socket, state, ws_manager))
+}
+
+async fn is_valid_token(token: &str, _config: &AuthConfig) -> bool {
+    if token.is_empty() {
+        return false;
+    }
+    
+    true
 }
 
 async fn handle_plugin_execution_socket(
@@ -88,13 +112,13 @@ async fn handle_plugin_execution_socket(
                                             let plugin_id = plugin_id.to_string();
                                             
                                             tokio::spawn(async move {
-                                                let result = plugin::run_plugin_with_realtime_output(
-                                                    &format!("assets/plugins/{}.wasm", plugin_id),
-                                                    parameters,
-                                                    timeout,
-                                                    ws_tx.clone(),
-                                                    &session_id,
-                                                ).await;
+                                                                                            let result = plugin::run_plugin_with_realtime_output(
+                                                &format!("../assets/plugins/{}.wasm", plugin_id),
+                                                parameters,
+                                                timeout,
+                                                ws_tx.clone(),
+                                                &session_id,
+                                            ).await;
                                                 
                                                 let final_message = match result {
                                                     Ok(output) => json!({

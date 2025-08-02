@@ -1,5 +1,4 @@
 use std::fs;
-use std::path::Path;
 use wasmtime::*;
 use wasmtime_wasi::WasiCtxBuilder;
 use std::env;
@@ -13,10 +12,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let plugin_path = &args[1];
     
-    // Create a WASM engine
     let engine = Engine::default();
     
-    // Create a store with WASI context
     let wasi = WasiCtxBuilder::new()
         .inherit_stdio()
         .inherit_args()?
@@ -24,18 +21,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let mut store = Store::new(&engine, wasi);
     
-    // Read the WASM module
     let wasm_bytes = fs::read(plugin_path)?;
     let module = Module::new(&engine, &wasm_bytes)?;
     
-    // Create a linker and add WASI
     let mut linker = Linker::new(&engine);
     wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
     
-    // Instantiate the module
     let instance = linker.instantiate(&mut store, &module)?;
     
-    // Try to find and call a suitable function
     let function_names = ["_start", "start", "main", "run"];
     
     let mut executed = false;
