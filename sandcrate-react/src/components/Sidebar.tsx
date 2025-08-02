@@ -21,12 +21,10 @@ export const Sidebar: React.FC = () => {
 
   return (
     <div className="sidebar w-64 flex flex-col bg-white border-r border-gray-200">
-      {/* Logo */}
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
         <h1 className="text-xl font-bold text-green-600">SandCrate</h1>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navigation.map((item) => {
           const Icon = item.icon;
@@ -47,7 +45,6 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* User Profile */}
       <div className="border-t border-gray-200 p-4">
         <div className="flex items-center">
           <UserCircleIcon className="w-8 h-8 text-gray-400" />
@@ -59,7 +56,6 @@ export const Sidebar: React.FC = () => {
         <button
           onClick={() => {
             logout();
-            // Redirect to auth page after logout
             window.location.href = '/auth';
           }}
           className="mt-3 w-full flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md transition-colors"

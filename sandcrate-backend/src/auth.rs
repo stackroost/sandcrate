@@ -90,7 +90,6 @@ pub async fn login(
     Json(payload): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, (StatusCode, Json<ErrorResponse>)> {
     println!("Login attempt for user: {}", payload.username);
-    // Authenticate using PAM
     let mut authenticator = Authenticator::with_password("login")
         .map_err(|_| {
             (
@@ -107,10 +106,8 @@ pub async fn login(
 
     match authenticator.authenticate() {
         Ok(_) => {
-            // Check user privileges
             let (is_admin, role) = check_user_privileges(&payload.username);
             
-            // Get user's real name from system
             let real_name = std::process::Command::new("getent")
                 .args(["passwd", &payload.username])
                 .output()
@@ -125,7 +122,6 @@ pub async fn login(
                 })
                 .unwrap_or_else(|| payload.username.clone());
 
-            // Generate JWT token
             let now = Utc::now();
             let expires_at = now + Duration::hours(24);
             

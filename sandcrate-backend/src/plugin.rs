@@ -4,14 +4,9 @@ use wasmtime::*;
 use wasmtime_wasi::WasiCtxBuilder;
 use serde_json::Value;
 use tokio::sync::broadcast;
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use std::io::{Read, Write};
-
-
 
 pub fn list_plugins() -> Vec<String> {
-    let plugins_dir = Path::new("assets/plugins");
+    let plugins_dir = Path::new("../assets/plugins");
 
     if !plugins_dir.exists() {
         return vec![];
@@ -38,7 +33,7 @@ pub fn run_plugin(plugin_path: &str) -> Result<String, Box<dyn std::error::Error
 
 pub fn run_plugin_with_params(
     plugin_path: &str, 
-    parameters: Option<Value>,
+    _parameters: Option<Value>,
     _timeout: Option<u64>
 ) -> Result<String, Box<dyn std::error::Error>> {
     let engine = Engine::default();

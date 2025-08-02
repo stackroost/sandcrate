@@ -35,14 +35,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session on app load
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('authToken');
         console.log('Checking auth, token exists:', !!token);
         
         if (token) {
-          // Validate token with Rust backend
           const response = await fetch('/auth/validate', {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -57,14 +55,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(data);
           } else {
             console.log('Token validation failed, clearing storage');
-            // Token is invalid, clear storage
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');
           }
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        // Clear invalid tokens on error
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
       } finally {
@@ -78,7 +74,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string) => {
     setLoading(true);
     try {
-      // Call Rust backend API for PAM Linux authentication
       const response = await fetch('/auth/login', {
         method: 'POST',
         headers: {
@@ -97,12 +92,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const data = await response.json();
       
-      // Store authentication token and user data
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
-      
-      // Login successful - user will be redirected to dashboard
     } catch (error) {
       console.error('Login failed:', error);
       throw new Error(error instanceof Error ? error.message : 'Login failed. Please check your credentials.');
